@@ -1,0 +1,2114 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام كاشير متكامل</title>
+    <!-- Font Awesome للأيقونات -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --dark-color: #34495e;
+            --light-color: #ecf0f1;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 300px 1fr 350px;
+            grid-template-rows: auto 1fr;
+            grid-template-areas:
+                "header header header"
+                "categories products cart";
+            height: 100vh;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        /* Header Styles */
+        .header {
+            grid-area: header;
+            background-color: var(--dark-color);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            font-size: 24px;
+            color: var(--secondary-color);
+        }
+
+        .logo h1 {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 15px;
+        }
+
+        .header-controls button {
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 12px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .header-controls button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .header-controls button i {
+            font-size: 18px;
+        }
+
+        /* Categories Styles */
+        .categories {
+            grid-area: categories;
+            background-color: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: var(--shadow);
+            overflow-y: auto;
+        }
+
+        .categories h2 {
+            margin-bottom: 15px;
+            color: var(--dark-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .category-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .category-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .category-item:hover {
+            background-color: #f0f0f0;
+        }
+
+        .category-item.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .category-item i {
+            font-size: 20px;
+            width: 24px;
+            text-align: center;
+        }
+
+        .category-actions {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Products Styles */
+        .products {
+            grid-area: products;
+            background-color: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: var(--shadow);
+            overflow-y: auto;
+        }
+
+        .products-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            background-color: #f0f2f5;
+            border-radius: 8px;
+            padding: 8px 12px;
+            width: 300px;
+        }
+
+        .search-bar i {
+            color: #999;
+            margin-left: 8px;
+        }
+
+        .search-bar input {
+            border: none;
+            background: transparent;
+            flex-grow: 1;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .view-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .view-btn {
+            background-color: #f0f2f5;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .view-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .product-card {
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #e0e0e0;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .product-image {
+            height: 120px;
+            background-color: #f0f2f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .product-image i {
+            font-size: 48px;
+            color: var(--primary-color);
+        }
+
+        .product-info {
+            padding: 12px;
+        }
+
+        .product-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .product-price {
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .product-inventory {
+            font-size: 12px;
+            color: #777;
+        }
+
+        /* Cart Styles */
+        .cart {
+            grid-area: cart;
+            background-color: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .cart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .cart-items {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+
+        .cart-item {
+            display: grid;
+            grid-template-columns: auto 1fr auto auto;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .cart-item-info {
+            overflow: hidden;
+        }
+
+        .cart-item-name {
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .cart-item-price {
+            color: #777;
+            font-size: 14px;
+        }
+
+        .cart-item-quantity {
+            display: flex;
+            align-items: center;
+        }
+
+        .quantity-btn {
+            background-color: #f0f2f5;
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .quantity-input {
+            width: 40px;
+            text-align: center;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            margin: 0 5px;
+        }
+
+        .cart-item-total {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .cart-item-remove {
+            color: var(--danger-color);
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .cart-summary {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .summary-row.total {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--dark-color);
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .cart-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn {
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+
+        .btn-success {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #27ae60;
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 10px;
+            width: 500px;
+            max-width: 90%;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .modal-header {
+            background-color: var(--dark-color);
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            padding: 20px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .modal-footer {
+            padding: 15px;
+            background-color: #f9f9f9;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-col {
+            flex: 1;
+        }
+
+        /* Payment modal specific styles */
+        .payment-methods {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .payment-method {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .payment-method:hover {
+            background-color: #f0f2f5;
+        }
+
+        .payment-method.selected {
+            border-color: var(--primary-color);
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+
+        .payment-method i {
+            font-size: 24px;
+            margin-bottom: 8px;
+            color: var(--dark-color);
+        }
+
+        /* Receipt styles */
+        .receipt {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            max-width: 350px;
+            margin: 0 auto;
+        }
+
+        .receipt-header {
+            text-align: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #ddd;
+        }
+
+        .receipt-header h3 {
+            margin-bottom: 5px;
+        }
+
+        .receipt-items {
+            margin-bottom: 15px;
+        }
+
+        .receipt-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .receipt-totals {
+            border-top: 1px dashed #ddd;
+            padding-top: 10px;
+        }
+
+        .receipt-total {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .receipt-footer {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 12px;
+            color: #777;
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--dark-color);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 5px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1001;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: transform 0.3s, opacity 0.3s;
+        }
+
+        .notification.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .notification i {
+            font-size: 20px;
+        }
+
+        .notification.success {
+            background-color: var(--secondary-color);
+        }
+
+        .notification.error {
+            background-color: var(--danger-color);
+        }
+
+        /* Settings modal */
+        .settings-tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+
+        .settings-tab {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+
+        .settings-tab.active {
+            border-bottom-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .settings-content {
+            display: none;
+        }
+
+        .settings-content.active {
+            display: block;
+        }
+
+        /* Product list view */
+        .product-list {
+            display: none;
+        }
+
+        .product-list-item {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            gap: 15px;
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+
+        .product-list-item:hover {
+            background-color: #f9f9f9;
+        }
+
+        .product-list-image {
+            width: 50px;
+            height: 50px;
+            background-color: #f0f2f5;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .product-list-image i {
+            font-size: 24px;
+            color: var(--primary-color);
+        }
+
+        /* Inventory management */
+        .inventory-list {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .inventory-list th,
+        .inventory-list td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            text-align: right;
+        }
+
+        .inventory-list th {
+            background-color: #f9f9f9;
+            font-weight: bold;
+        }
+
+        .inventory-list tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .inventory-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .inventory-actions button {
+            border: none;
+            background-color: transparent;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 3px;
+        }
+
+        .inventory-actions button:hover {
+            background-color: #f0f0f0;
+        }
+
+        .inventory-actions button.edit {
+            color: var(--primary-color);
+        }
+
+        .inventory-actions button.delete {
+            color: var(--danger-color);
+        }
+
+        /* Low stock warning */
+        .low-stock {
+            color: var(--danger-color);
+            font-weight: bold;
+        }
+
+        /* Custom styles for mobile responsiveness */
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto 1fr auto;
+                grid-template-areas:
+                    "header"
+                    "categories"
+                    "products"
+                    "cart";
+            }
+
+            .categories {
+                overflow-x: auto;
+                overflow-y: hidden;
+                padding: 10px;
+            }
+
+            .category-list {
+                flex-direction: row;
+            }
+
+            .category-item {
+                flex-direction: column;
+                text-align: center;
+                min-width: 80px;
+                height: 80px;
+                justify-content: center;
+            }
+
+            .categories h2 {
+                display: none;
+            }
+
+            .cart {
+                max-height: 300px;
+            }
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            .receipt,
+            .receipt * {
+                visibility: visible;
+            }
+
+            .receipt {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                box-shadow: none;
+            }
+        }
+
+        .price-tag {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .barcode-scanner {
+            display: flex;
+            background-color: #f0f2f5;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .barcode-scanner input {
+            border: none;
+            background: transparent;
+            flex-grow: 1;
+            outline: none;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+
+        .barcode-scanner button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        /* Keyboard shortcuts modal */
+        .shortcuts-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .shortcut-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .shortcut-keys {
+            display: flex;
+            gap: 5px;
+        }
+
+        .key {
+            background-color: #f0f2f5;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            padding: 3px 8px;
+            font-size: 12px;
+            font-family: monospace;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: var(--primary-color);
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Hold item feature */
+        .holds-container {
+            display: none;
+            margin-top: 15px;
+        }
+
+        .hold-list {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+
+        .hold-item {
+            background-color: #f0f2f5;
+            border-radius: 5px;
+            padding: 8px 12px;
+            cursor: pointer;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .hold-item:hover {
+            background-color: #e0e0e0;
+        }
+
+        .hold-item.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        /* Category and Product Management */
+        .category-manager,
+        .product-manager {
+            margin-top: 10px;
+        }
+
+        .action-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .action-btn:hover {
+            background-color: #2980b9;
+        }
+
+        .action-btn.add {
+            background-color: var(--secondary-color);
+        }
+
+        .action-btn.add:hover {
+            background-color: #27ae60;
+        }
+
+        /* Inventory Status */
+        .stock-status {
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .in-stock {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .low-stock {
+            background-color: #fff8e1;
+            color: #f57f17;
+        }
+
+        .out-of-stock {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        /* Reports Section */
+        .report-card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .report-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--dark-color);
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+
+        .report-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .report-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .report-icon {
+            font-size: 36px;
+            color: #ddd;
+        }
+
+        /* مخطط بياني بسيط */
+        .chart-container {
+            height: 200px;
+            margin-top: 20px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+
+        .chart-bar {
+            width: 30px;
+            background-color: var(--primary-color);
+            border-radius: 3px 3px 0 0;
+            position: relative;
+        }
+
+        .chart-label {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: #777;
+            white-space: nowrap;
+        }
+
+        .chart-value {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: var(--dark-color);
+            font-weight: bold;
+        }
+
+        /* New tabs for Store Settings */
+        .store-logo-preview {
+            width: 100px;
+            height: 100px;
+            border-radius: 10px;
+            background-color: #f0f2f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+
+        .store-logo-preview i {
+            font-size: 48px;
+            color: #ddd;
+        }
+
+        /* Product categories management */
+        .categories-list {
+            margin-top: 20px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .categories-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .categories-list-item:last-child {
+            border-bottom: none;
+        }
+
+        .categories-list-item:hover {
+            background-color: #f9f9f9;
+        }
+
+        .category-icon-select {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .icon-option {
+            width: 40px;
+            height: 40px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .icon-option:hover {
+            background-color: #f0f2f5;
+        }
+
+        .icon-option.selected {
+            border-color: var(--primary-color);
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+
+        /* Report Panel Styles */
+        .report-panel {
+            display: none;
+        }
+
+        .report-panel.active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">
+                <i class="fas fa-cash-register"></i>
+                <h1>نظام كاشير متكامل</h1>
+            </div>
+            <div class="header-controls">
+                <button id="btn-keyboard-shortcuts">
+                    <i class="fas fa-keyboard"></i>
+                    اختصارات
+                </button>
+                <button id="btn-inventory">
+                    <i class="fas fa-boxes"></i>
+                    المخزون
+                </button>
+                <button id="btn-reports">
+                    <i class="fas fa-chart-bar"></i>
+                    التقارير
+                </button>
+                <button id="btn-hold-order">
+                    <i class="fas fa-pause"></i>
+                    تعليق الطلب
+                </button>
+                <button id="btn-open-drawer">
+                    <i class="fas fa-inbox"></i>
+                    فتح الدرج
+                </button>
+                <button id="btn-settings">
+                    <i class="fas fa-cog"></i>
+                    الإعدادات
+                </button>
+            </div>
+        </div>
+
+        <!-- Categories -->
+        <div class="categories">
+            <h2><i class="fas fa-tags"></i> الأقسام</h2>
+            <div class="category-list" id="category-list">
+                <!-- Categories will be added here via JS -->
+            </div>
+            <div class="category-actions">
+                <button class="action-btn add" id="btn-add-category">
+                    <i class="fas fa-plus"></i>
+                    إضافة قسم
+                </button>
+                <button class="action-btn" id="btn-manage-categories">
+                    <i class="fas fa-edit"></i>
+                    إدارة الأقسام
+                </button>
+            </div>
+        </div>
+
+        <!-- Products -->
+        <div class="products">
+            <div class="products-header">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="search-input" placeholder="البحث عن منتج...">
+                </div>
+                <div class="barcode-scanner">
+                    <input type="text" id="barcode-input" placeholder="مسح الباركود...">
+                    <button id="scan-barcode"><i class="fas fa-barcode"></i> مسح</button>
+                </div>
+                <div class="view-controls">
+                    <button class="view-btn active" id="grid-view"><i class="fas fa-th"></i></button>
+                    <button class="view-btn" id="list-view"><i class="fas fa-list"></i></button>
+                    <button class="action-btn add" id="btn-add-product">
+                        <i class="fas fa-plus"></i>
+                        منتج جديد
+                    </button>
+                </div>
+            </div>
+            <div class="product-grid" id="product-grid">
+                <!-- Products will be added here via JS -->
+            </div>
+            <div class="product-list" id="product-list">
+                <!-- Products will be added here via JS (list view) -->
+            </div>
+        </div>
+
+        <!-- Cart -->
+        <div class="cart">
+            <div class="cart-header">
+                <h2><i class="fas fa-shopping-cart"></i> سلة المشتريات</h2>
+                <button class="btn-danger" id="clear-cart"><i class="fas fa-trash"></i></button>
+            </div>
+            <div class="holds-container" id="holds-container">
+                <h3>الطلبات المعلقة</h3>
+                <div class="hold-list" id="hold-list">
+                    <!-- Held orders will be added here via JS -->
+                </div>
+            </div>
+            <div class="cart-items" id="cart-items">
+                <!-- Cart items will be added here via JS -->
+            </div>
+            <div class="cart-summary">
+                <div class="summary-row">
+                    <span>المجموع الفرعي:</span>
+                    <span id="subtotal">0.00 د.ع</span>
+                </div>
+                <div class="summary-row">
+                    <span>الضريبة (15%):</span>
+                    <span id="tax">0.00 د.ع</span>
+                </div>
+                <div class="summary-row">
+                    <span>الخصم:</span>
+                    <span id="discount">0.00 د.ع</span>
+                </div>
+                <div class="summary-row total">
+                    <span>الإجمالي:</span>
+                    <span id="total">0.00 د.ع</span>
+                </div>
+                <div class="cart-actions">
+                    <button class="btn btn-primary" id="btn-discount">
+                        <i class="fas fa-percent"></i>
+                        خصم
+                    </button>
+                    <button class="btn btn-success" id="btn-payment">
+                        <i class="fas fa-money-bill-wave"></i>
+                        الدفع
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Discount Modal -->
+    <div class="modal" id="discount-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>إضافة خصم</h2>
+                <button class="modal-close" id="close-discount-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="discount-type">نوع الخصم</label>
+                    <select class="form-control" id="discount-type">
+                        <option value="percentage">نسبة مئوية (%)</option>
+                        <option value="fixed">مبلغ ثابت</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="discount-value">قيمة الخصم</label>
+                    <input type="number" class="form-control" id="discount-value" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="discount-reason">سبب الخصم (اختياري)</label>
+                    <input type="text" class="form-control" id="discount-reason" placeholder="سبب الخصم...">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="apply-discount">تطبيق</button>
+                <button class="btn" id="cancel-discount">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal" id="payment-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>الدفع</h2>
+                <button class="modal-close" id="close-payment-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h3>اختر طريقة الدفع</h3>
+                <div class="payment-methods">
+                    <div class="payment-method" data-method="cash">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <div>نقداً</div>
+                    </div>
+                    <div class="payment-method" data-method="card">
+                        <i class="fas fa-credit-card"></i>
+                        <div>بطاقة ائتمان</div>
+                    </div>
+                    <div class="payment-method" data-method="mada">
+                        <i class="fas fa-credit-card"></i>
+                        <div>كي كارد</div>
+                    </div>
+                </div>
+
+                <div id="cash-payment-details">
+                    <div class="form-group">
+                        <label for="cash-amount">المبلغ المستلم</label>
+                        <input type="number" class="form-control" id="cash-amount" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="change-amount">المبلغ المتبقي</label>
+                        <input type="text" class="form-control" id="change-amount" readonly>
+                    </div>
+                </div>
+
+                <div id="card-payment-details" style="display: none;">
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label for="card-number">رقم البطاقة</label>
+                                <input type="text" class="form-control" id="card-number"
+                                    placeholder="**** **** **** ****">
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label for="card-expiry">تاريخ الانتهاء</label>
+                                <input type="text" class="form-control" id="card-expiry" placeholder="MM/YY">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="receipt-customer">
+                    <div class="form-group">
+                        <label for="customer-name">اسم العميل (اختياري)</label>
+                        <input type="text" class="form-control" id="customer-name" placeholder="اسم العميل...">
+                    </div>
+                    <div class="form-group">
+                        <label for="customer-phone">رقم الهاتف (اختياري)</label>
+                        <input type="text" class="form-control" id="customer-phone" placeholder="رقم الهاتف...">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-success" id="complete-payment">إتمام الدفع</button>
+                <button class="btn" id="cancel-payment">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipt Modal -->
+    <div class="modal" id="receipt-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>الفاتورة</h2>
+                <button class="modal-close" id="close-receipt-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="receipt" id="receipt">
+                    <div class="receipt-header">
+                        <h3>متجر المستقبل</h3>
+                        <p>شارع الرشيد، بغداد</p>
+                        <p>هاتف: 07700000000</p>
+                        <p id="receipt-date"></p>
+                        <p id="receipt-number"></p>
+                    </div>
+                    <div class="receipt-customer-info" id="receipt-customer-info">
+                        <!-- Customer info will be added here via JS -->
+                    </div>
+                    <div class="receipt-items" id="receipt-items">
+                        <!-- Receipt items will be added here via JS -->
+                    </div>
+                    <div class="receipt-totals">
+                        <div class="receipt-total">
+                            <span>المجموع الفرعي:</span>
+                            <span id="receipt-subtotal"></span>
+                        </div>
+                        <div class="receipt-total">
+                            <span>الضريبة (15%):</span>
+                            <span id="receipt-tax"></span>
+                        </div>
+                        <div class="receipt-total" id="receipt-discount-row">
+                            <span>الخصم:</span>
+                            <span id="receipt-discount"></span>
+                        </div>
+                        <div class="receipt-total">
+                            <span>الإجمالي:</span>
+                            <span id="receipt-total"></span>
+                        </div>
+                        <div class="receipt-total">
+                            <span>طريقة الدفع:</span>
+                            <span id="receipt-payment-method"></span>
+                        </div>
+                    </div>
+                    <div class="receipt-footer">
+                        <p>شكراً لزيارتكم!</p>
+                        <p>نتمنى لكم يوماً سعيداً</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="print-receipt">
+                    <i class="fas fa-print"></i>
+                    طباعة
+                </button>
+                <button class="btn" id="email-receipt">
+                    <i class="fas fa-envelope"></i>
+                    إرسال بالبريد
+                </button>
+                <button class="btn" id="sms-receipt">
+                    <i class="fas fa-sms"></i>
+                    إرسال برسالة
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settings-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>الإعدادات</h2>
+                <button class="modal-close" id="close-settings-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-tabs">
+                    <div class="settings-tab active" data-tab="general">عام</div>
+                    <div class="settings-tab" data-tab="receipt">الفاتورة</div>
+                    <div class="settings-tab" data-tab="taxes">الضرائب</div>
+                    <div class="settings-tab" data-tab="users">المستخدمين</div>
+                    <div class="settings-tab" data-tab="backup">النسخ الاحتياطي</div>
+                    <div class="settings-tab" data-tab="appearance">المظهر</div>
+                </div>
+
+                <div class="settings-content active" id="general-settings">
+                    <div class="form-group">
+                        <label for="store-name">اسم المتجر</label>
+                        <input type="text" class="form-control" id="store-name" value="متجر المستقبل">
+                    </div>
+                    <div class="form-group">
+                        <label for="store-address">عنوان المتجر</label>
+                        <input type="text" class="form-control" id="store-address" value="شارع الرشيد، بغداد">
+                    </div>
+                    <div class="form-group">
+                        <label for="store-phone">رقم الهاتف</label>
+                        <input type="text" class="form-control" id="store-phone" value="07700000000">
+                    </div>
+                    <div class="form-group">
+                        <label for="currency">العملة</label>
+                        <select class="form-control" id="currency">
+                            <option value="IQD" selected>دينار عراقي (د.ع)</option>
+                            <option value="USD">دولار أمريكي ($)</option>
+                            <option value="EUR">يورو (€)</option>
+                            <option value="SAR">ريال سعودي (ر.س)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="low-stock-threshold">تنبيه انخفاض المخزون عند</label>
+                        <input type="number" class="form-control" id="low-stock-threshold" value="10" min="1">
+                    </div>
+                </div>
+
+                <div class="settings-content" id="receipt-settings">
+                    <div class="form-group">
+                        <label for="receipt-header">رأس الفاتورة</label>
+                        <textarea class="form-control" id="receipt-header" rows="3">متجر المستقبل
+شارع الرشيد، بغداد
+هاتف: 07700000000</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="receipt-footer">تذييل الفاتورة</label>
+                        <textarea class="form-control" id="receipt-footer" rows="3">شكراً لزيارتكم!
+نتمنى لكم يوماً سعيداً</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="receipt-show-tax">عرض الضريبة في الفاتورة</label>
+                        <select class="form-control" id="receipt-show-tax">
+                            <option value="yes" selected>نعم</option>
+                            <option value="no">لا</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="receipt-logo">إضافة شعار للفاتورة</label>
+                        <div class="store-logo-preview">
+                            <i class="fas fa-store"></i>
+                        </div>
+                        <input type="file" class="form-control" id="receipt-logo" accept="image/*">
+                    </div>
+                </div>
+
+                <div class="settings-content" id="taxes-settings">
+                    <div class="form-group">
+                        <label for="tax-enabled">تفعيل الضريبة</label>
+                        <select class="form-control" id="tax-enabled">
+                            <option value="yes" selected>نعم</option>
+                            <option value="no">لا</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="tax-rate">نسبة الضريبة</label>
+                        <input type="number" class="form-control" id="tax-rate" value="15" min="0" max="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="tax-included">الضريبة مضمنة في السعر</label>
+                        <select class="form-control" id="tax-included">
+                            <option value="yes">نعم</option>
+                            <option value="no" selected>لا</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="tax-number">الرقم الضريبي (اختياري)</label>
+                        <input type="text" class="form-control" id="tax-number" placeholder="أدخل الرقم الضريبي">
+                    </div>
+                </div>
+
+                <div class="settings-content" id="users-settings">
+                    <div class="form-group">
+                        <label for="admin-password">كلمة مرور المدير</label>
+                        <input type="password" class="form-control" id="admin-password">
+                    </div>
+                    <div class="form-group">
+                        <label for="cashier-password">كلمة مرور الكاشير</label>
+                        <input type="password" class="form-control" id="cashier-password">
+                    </div>
+                    <div class="form-group">
+                        <label for="user-permissions">صلاحيات المستخدمين</label>
+                        <div>
+                            <label><input type="checkbox" id="perm-manage-products" checked> إدارة المنتجات</label><br>
+                            <label><input type="checkbox" id="perm-manage-inventory" checked> إدارة المخزون</label><br>
+                            <label><input type="checkbox" id="perm-reports" checked> مشاهدة التقارير</label><br>
+                            <label><input type="checkbox" id="perm-settings"> تغيير الإعدادات</label><br>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-content" id="backup-settings">
+                    <div class="form-group">
+                        <h3>النسخ الاحتياطي</h3>
+                        <p>قم بعمل نسخة احتياطية من بيانات النظام واستعادتها عند الحاجة.</p>
+                        <button class="btn btn-primary" id="create-backup">
+                            <i class="fas fa-download"></i>
+                            إنشاء نسخة احتياطية
+                        </button>
+                    </div>
+                    <div class="form-group">
+                        <h3>استعادة البيانات</h3>
+                        <p>استعادة البيانات من نسخة احتياطية سابقة.</p>
+                        <input type="file" class="form-control" id="restore-backup" accept=".json">
+                        <button class="btn btn-primary" style="margin-top: 10px" id="btn-restore-backup">
+                            <i class="fas fa-upload"></i>
+                            استعادة البيانات
+                        </button>
+                    </div>
+                </div>
+
+                <div class="settings-content" id="appearance-settings">
+                    <div class="form-group">
+                        <label for="theme-color">لون السمة</label>
+                        <select class="form-control" id="theme-color">
+                            <option value="blue" selected>أزرق</option>
+                            <option value="green">أخضر</option>
+                            <option value="red">أحمر</option>
+                            <option value="purple">بنفسجي</option>
+                            <option value="orange">برتقالي</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="font-size">حجم الخط</label>
+                        <select class="form-control" id="font-size">
+                            <option value="small">صغير</option>
+                            <option value="medium" selected>متوسط</option>
+                            <option value="large">كبير</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="dark-mode">الوضع الليلي</label>
+                        <select class="form-control" id="dark-mode">
+                            <option value="auto">تلقائي (حسب إعدادات النظام)</option>
+                            <option value="light" selected>وضع النهار</option>
+                            <option value="dark">وضع الليل</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="save-settings">حفظ</button>
+                <button class="btn" id="cancel-settings">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Keyboard Shortcuts Modal -->
+    <div class="modal" id="keyboard-shortcuts-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>اختصارات لوحة المفاتيح</h2>
+                <button class="modal-close" id="close-shortcuts-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <ul class="shortcuts-list">
+                    <li class="shortcut-item">
+                        <span>فتح شاشة الدفع</span>
+                        <div class="shortcut-keys">
+                            <span class="key">F2</span>
+                        </div>
+                    </li>
+                    <li class="shortcut-item">
+                        <span>خصم</span>
+                        <div class="shortcut-keys">
+                            <span class="key">F3</span>
+                        </div>
+                    </li>
+                    <li class="shortcut-item">
+                        <span>حذف السلة</span>
+                        <div class="shortcut-keys">
+                            <span class="key">F4</span>
+                        </div>
+                    </li>
+                    <li class="shortcut-item">
+                        <span>تعليق الطلب</span>
+                        <div class="shortcut-keys">
+                            <span class="key">F5</span>
+                        </div>
+                    </li>
+                    <li class="shortcut-item">
+                        <span>الإعدادات</span>
+                        <div class="shortcut-keys">
+                            <span class="key">F6</span>
+                        </div>
+                    </li>
+                    <li class="shortcut-item">
+                        <span>إدارة المخزون</span>
+                        <div class="shortcut-keys">
+                            <span class="key">F7</span>
+                        </div>
+                    </li>
+                    <li class="shortcut-item">
+                        <span>إضافة منتج جديد</span>
+                        <div class="shortcut-keys">
+                            <span class="key">F8</span>
+                        </div>
+                    </li>
+                    <li class="shortcut-item">
+                        <span>البحث عن منتج</span>
+                        <div class="shortcut-keys">
+                            <span class="key">Ctrl</span>
+                            <span class="key">F</span>
+                        </div>
+                    </li>
+                    <li class="shortcut-item">
+                        <span>التركيز على الباركود</span>
+                        <div class="shortcut-keys">
+                            <span class="key">Ctrl</span>
+                            <span class="key">B</span>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hold Order Modal -->
+    <div class="modal" id="hold-order-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>تعليق الطلب</h2>
+                <button class="modal-close" id="close-hold-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="hold-name">اسم العميل</label>
+                    <input type="text" class="form-control" id="hold-name" placeholder="اسم العميل...">
+                </div>
+                <div class="form-group">
+                    <label for="hold-note">ملاحظات (اختياري)</label>
+                    <textarea class="form-control" id="hold-note" rows="3"
+                        placeholder="أي ملاحظات إضافية..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="save-hold">تعليق الطلب</button>
+                <button class="btn" id="cancel-hold">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Product Modal -->
+    <div class="modal" id="add-product-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="product-modal-title">إضافة منتج جديد</h2>
+                <button class="modal-close" id="close-add-product-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="product-name">اسم المنتج</label>
+                    <input type="text" class="form-control" id="product-name" placeholder="أدخل اسم المنتج">
+                </div>
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="product-category">القسم</label>
+                            <select class="form-control" id="product-category">
+                                <!-- Categories will be added here via JS -->
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="product-price">السعر</label>
+                            <input type="number" class="form-control" id="product-price" min="0" step="0.01"
+                                placeholder="سعر المنتج">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="product-barcode">الباركود</label>
+                            <input type="text" class="form-control" id="product-barcode" placeholder="رقم الباركود">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="product-inventory">الكمية في المخزون</label>
+                            <input type="number" class="form-control" id="product-inventory" min="0"
+                                placeholder="الكمية">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="product-icon">أيقونة المنتج</label>
+                    <select class="form-control" id="product-icon">
+                        <option value="fas fa-box">صندوق</option>
+                        <option value="fas fa-mug-hot">قهوة</option>
+                        <option value="fas fa-hamburger">برجر</option>
+                        <option value="fas fa-pizza-slice">بيتزا</option>
+                        <option value="fas fa-ice-cream">آيس كريم</option>
+                        <option value="fas fa-cookie">كعك</option>
+                        <option value="fas fa-glass-whiskey">عصير</option>
+                        <option value="fas fa-tshirt">ملابس</option>
+                        <option value="fas fa-mobile-alt">جوال</option>
+                        <option value="fas fa-laptop">لابتوب</option>
+                        <option value="fas fa-headphones">سماعات</option>
+                        <option value="fas fa-book">كتاب</option>
+                        <option value="fas fa-utensils">طعام</option>
+                        <option value="fas fa-fish">سمك</option>
+                        <option value="fas fa-carrot">خضار</option>
+                        <option value="fas fa-apple-alt">فواكه</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="product-description">وصف المنتج (اختياري)</label>
+                    <textarea class="form-control" id="product-description" rows="3"
+                        placeholder="وصف المنتج..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label><input type="checkbox" id="low-stock-notification"> تنبيه عند انخفاض المخزون</label>
+                </div>
+                <input type="hidden" id="product-id"> <!-- للتعديل -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="save-product">حفظ المنتج</button>
+                <button class="btn" id="cancel-add-product">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Category Modal -->
+    <div class="modal" id="add-category-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="category-modal-title">إضافة قسم جديد</h2>
+                <button class="modal-close" id="close-add-category-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="category-name">اسم القسم</label>
+                    <input type="text" class="form-control" id="category-name" placeholder="أدخل اسم القسم">
+                </div>
+                <div class="form-group">
+                    <label for="category-icon">أيقونة القسم</label>
+                    <select class="form-control" id="category-icon">
+                        <option value="fas fa-tag">علامة</option>
+                        <option value="fas fa-coffee">قهوة</option>
+                        <option value="fas fa-hamburger">وجبات سريعة</option>
+                        <option value="fas fa-birthday-cake">حلويات</option>
+                        <option value="fas fa-laptop">إلكترونيات</option>
+                        <option value="fas fa-tshirt">ملابس</option>
+                        <option value="fas fa-home">أدوات منزلية</option>
+                        <option value="fas fa-pump-soap">منتجات العناية</option>
+                        <option value="fas fa-fish">مأكولات بحرية</option>
+                        <option value="fas fa-apple-alt">فواكه</option>
+                        <option value="fas fa-carrot">خضار</option>
+                        <option value="fas fa-bread-slice">مخبوزات</option>
+                        <option value="fas fa-book">كتب</option>
+                        <option value="fas fa-gamepad">ألعاب</option>
+                        <option value="fas fa-mobile-alt">جوالات</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="category-description">وصف القسم (اختياري)</label>
+                    <textarea class="form-control" id="category-description" rows="3"
+                        placeholder="وصف القسم..."></textarea>
+                </div>
+                <input type="hidden" id="category-id"> <!-- للتعديل -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="save-category">حفظ القسم</button>
+                <button class="btn" id="cancel-add-category">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manage Categories Modal -->
+    <div class="modal" id="manage-categories-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>إدارة الأقسام</h2>
+                <button class="modal-close" id="close-manage-categories-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="categories-list" id="categories-management-list">
+                    <!-- Categories will be added here via JS -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="add-new-category">
+                    <i class="fas fa-plus"></i>
+                    إضافة قسم جديد
+                </button>
+                <button class="btn" id="close-manage-categories">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inventory Management Modal -->
+    <div class="modal" id="inventory-modal">
+        <div class="modal-content" style="width: 80%; max-width: 1000px;">
+            <div class="modal-header">
+                <h2>إدارة المخزون</h2>
+                <button class="modal-close" id="close-inventory-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <div class="search-bar" style="width: 100%; margin-bottom: 20px;">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="inventory-search" placeholder="البحث في المخزون...">
+                    </div>
+                </div>
+                <table class="inventory-list">
+                    <thead>
+                        <tr>
+                            <th>الكود</th>
+                            <th>اسم المنتج</th>
+                            <th>القسم</th>
+                            <th>السعر</th>
+                            <th>الكمية</th>
+                            <th>حالة المخزون</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-items">
+                        <!-- Inventory items will be added here via JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="add-inventory-product">
+                    <i class="fas fa-plus"></i>
+                    إضافة منتج جديد
+                </button>
+                <button class="btn btn-primary" id="export-inventory">
+                    <i class="fas fa-file-export"></i>
+                    تصدير إلى Excel
+                </button>
+                <button class="btn" id="close-inventory">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reports Modal -->
+    <div class="modal" id="reports-modal">
+        <div class="modal-content" style="width: 80%; max-width: 1000px;">
+            <div class="modal-header">
+                <h2>التقارير</h2>
+                <button class="modal-close" id="close-reports-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-tabs">
+                    <div class="settings-tab active" data-report="sales">المبيعات</div>
+                    <div class="settings-tab" data-report="inventory">المخزون</div>
+                    <div class="settings-tab" data-report="customers">العملاء</div>
+                    <div class="settings-tab" data-report="profit">الربح</div>
+                </div>
+
+                <div class="form-row" style="margin: 20px 0;">
+                    <div class="form-col">
+                        <label for="report-from-date">من تاريخ</label>
+                        <input type="date" class="form-control" id="report-from-date">
+                    </div>
+                    <div class="form-col">
+                        <label for="report-to-date">إلى تاريخ</label>
+                        <input type="date" class="form-control" id="report-to-date">
+                    </div>
+                    <div class="form-col">
+                        <label>&nbsp;</label>
+                        <button class="btn btn-primary" id="generate-report" style="width: 100%;">عرض التقرير</button>
+                    </div>
+                </div>
+
+                <div id="report-sales" class="report-panel active">
+                    <div class="form-row">
+                        <div class="report-card" style="flex: 1;">
+                            <div class="report-title">إجمالي المبيعات</div>
+                            <div class="report-content">
+                                <div class="report-value" id="total-sales">0 د.ع</div>
+                                <div class="report-icon"><i class="fas fa-money-bill-wave"></i></div>
+                            </div>
+                        </div>
+                        <div class="report-card" style="flex: 1;">
+                            <div class="report-title">عدد المعاملات</div>
+                            <div class="report-content">
+                                <div class="report-value" id="transactions-count">0</div>
+                                <div class="report-icon"><i class="fas fa-receipt"></i></div>
+                            </div>
+                        </div>
+                        <div class="report-card" style="flex: 1;">
+                            <div class="report-title">متوسط قيمة الفاتورة</div>
+                            <div class="report-content">
+                                <div class="report-value" id="average-sale">0 د.ع</div>
+                                <div class="report-icon"><i class="fas fa-chart-line"></i></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="report-card">
+                        <div class="report-title">مبيعات حسب اليوم</div>
+                        <div class="chart-container" id="daily-sales-chart">
+                            <!-- Chart will be added here via JS -->
+                        </div>
+                    </div>
+
+                    <div class="report-card">
+                        <div class="report-title">أفضل المنتجات مبيعاً</div>
+                        <table class="inventory-list">
+                            <thead>
+                                <tr>
+                                    <th>المنتج</th>
+                                    <th>القسم</th>
+                                    <th>الكمية المباعة</th>
+                                    <th>إجمالي المبيعات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="top-products">
+                                <!-- Top products will be added here via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="report-inventory" class="report-panel">
+                    <div class="form-row">
+                        <div class="report-card" style="flex: 1;">
+                            <div class="report-title">إجمالي المنتجات</div>
+                            <div class="report-content">
+                                <div class="report-value" id="total-products">0</div>
+                                <div class="report-icon"><i class="fas fa-boxes"></i></div>
+                            </div>
+                        </div>
+                        <div class="report-card" style="flex: 1;">
+                            <div class="report-title">قيمة المخزون</div>
+                            <div class="report-content">
+                                <div class="report-value" id="inventory-value">0 د.ع</div>
+                                <div class="report-icon"><i class="fas fa-warehouse"></i></div>
+                            </div>
+                        </div>
+                        <div class="report-card" style="flex: 1;">
+                            <div class="report-title">منتجات نفذت</div>
+                            <div class="report-content">
+                                <div class="report-value" id="out-of-stock">0</div>
+                                <div class="report-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="report-card">
+                        <div class="report-title">المنتجات قليلة المخزون</div>
+                        <table class="inventory-list">
+                            <thead>
+                                <tr>
+                                    <th>المنتج</th>
+                                    <th>القسم</th>
+                                    <th>الكمية المتبقية</th>
+                                    <th>حالة المخزون</th>
+                                </tr>
+                            </thead>
+                            <tbody id="low-stock-products">
+                                <!-- Low stock products will be added here via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="report-customers" class="report-panel">
+                    <div class="form-row">
+                        <div class="report-card" style="flex: 1;">
+                            <div class="report-title">إجمالي العملاء</div>
+                            <div class="report-content">
+                                <div class="report-value" id="total-customers">0</div>
+                                <div class="report-icon"><i class="fas fa-users"></i></div>
+                            </div>
+                        </div>
+                        <div class="report-card" style="flex: 1;">
+                            <div class="report-title">عدد الزيارات</div>
+                            <div class="report-content">
+                                <div class="report-value" id="customer-visits">0</div>
+                                <div class="report-icon"><i class="fas fa-store"></i></div>
+                            </div>
+                        </div>
+                        <div class="report-card" style="flex: 1;">
+                            <div class="report-title">متوسط إنفاق العميل</div>
+                            <div class="report-content">
+                                <div class="report-value" id="average-customer-spend">0 د.ع</div>
+                                <div class="report-icon"><i class="fas fa-wallet"></i></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="report-card">
+                        <div class="report-title">أفضل العملاء</div>
+                        <table class="inventory-list">
+                            <thead>
+                                <tr>
+                                    <th>العميل</th>
+                                    <th>عدد المشتريات</th>
+                                    <th>إجمالي الإنفاق</th>
+                                    <th>آخر زيارة</th>
+                                </tr>
+                            </thead>
+                            <tbody id="top-customers">
+                                <!-- Top customers will be added here via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="report-profit" class="report-panel">
+                    <div class="form-row">
+                        <div class="report-card" style="flex: 1;">
+                            <div class="report-title">إجمالي الربح</div>
+                            <div class="report-content">
+                                <div class="report-value" id="total-profit">0 د.ع</div>
+                                <div class="report-icon"><i class="fas fa-chart-line"></i></div>
+                            </div>
+                        </div>
+                        <div class="report-card" style="flex: 1;">
+                            <div class="report-title">الخصومات</div>
+                            <div class="report-content">
+                                <div class="report-value" id="total-discounts">0 د.ع</div>
+                                <div class="report-icon"><i class="fas fa-percent"></i></div>
+                            </div>
+                        </div>
+                        <div class="report-card" style="flex: 1;">
+                            <div class="report-title">نسبة الربح</div>
+                            <div class="report-content">
+                                <div class="report-value" id="profit-margin">0%</div>
+                                <div class="report-icon"><i class="fas fa-funnel-dollar"></i></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="report-card">
+                        <div class="report-title">الربح حسب القسم</div>
+                        <div class="chart-container" id="profit-by-category">
+                            <!-- Chart will be added here via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="print-report">
+                    <i class="fas fa-print"></i>
+                    طباعة التقرير
+                </button>
+                <button class="btn btn-primary" id="export-report">
+                    <i class="fas fa-file-export"></i>
+                    تصدير التقرير
+                </button>
+                <button class="btn" id="close-reports">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification">
+        <i class="fas fa-info-circle"></i>
+        <span id="notification-message"></span>
+    </div>
+
+    
+
+    </script>
+    <script src="index.js"></script>
+    <script src="index2.js"></script>
+    <script src="index3.js"></script>
+    <script src="index4.js"></script>
+    <script src="index5.js"></script>
+    <script src="index6.js"></script>
+    <script src="index7.js"></script>
+
+</body>
+
+</html>
