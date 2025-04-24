@@ -2260,3 +2260,168 @@ button:disabled,
 .dark-mode .version-info {
     color: #bdc3c7;
 }
+
+
+
+
+/* إضافة التصميم لواجهة تسجيل الدخول وإنشاء الحساب */
+/* قم بإضافة هذا الكود إلى ملف login.css أو styles.css */
+
+/* ألسنة التبديل بين تسجيل الدخول وإنشاء حساب */
+.auth-tabs {
+    display: flex;
+    margin-bottom: 25px;
+    background-color: #f5f7fa;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.auth-tab {
+    flex: 1;
+    padding: 12px 15px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--dark-color);
+    transition: all 0.3s ease;
+}
+
+.auth-tab:hover {
+    background-color: rgba(52, 152, 219, 0.1);
+}
+
+.auth-tab.active {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+/* تصميم الروابط داخل النماذج */
+.auth-links {
+    margin-top: 15px;
+    text-align: center;
+}
+
+.auth-links a {
+    color: var(--secondary-color);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.auth-links a:hover {
+    color: var(--primary-color);
+    text-decoration: underline;
+}
+
+/* تصميم مؤشر قوة كلمة المرور */
+.password-strength {
+    margin-top: 10px;
+    margin-bottom: 15px;
+}
+
+.strength-meter {
+    height: 5px;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 5px;
+}
+
+.meter-bar {
+    height: 100%;
+    width: 0;
+    border-radius: 5px;
+    transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.strength-text {
+    font-size: 0.8rem;
+    color: #777;
+    text-align: right;
+}
+
+/* زيادة ارتفاع حاوية النموذج لاستيعاب النموذج الطويل */
+.login-form-container {
+    max-width: 450px;
+    overflow-y: auto;
+    max-height: 90vh;
+}
+
+/* تحسينات إضافية */
+.login-form-container form {
+    transition: opacity 0.3s ease;
+}
+
+.form-group {
+    margin-bottom: 15px;
+    position: relative;
+}
+
+/* تحريك الأيقونة */
+.login-container .toggle-password {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #666;
+    font-size: 1rem;
+    padding: 0;
+    margin: 0;
+    transition: color 0.3s;
+    z-index: 2;
+}
+
+.login-container .toggle-password:hover {
+    color: var(--secondary-color);
+}
+
+.password-input {
+    position: relative;
+}
+
+/* تأثيرات متحركة */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.login-form-container form {
+    animation: fadeIn 0.5s forwards;
+}
+
+/* وضع الظلام */
+.dark-mode .auth-tabs {
+    background-color: #1a1a2e;
+}
+
+.dark-mode .auth-tab {
+    color: #ecf0f1;
+}
+
+.dark-mode .auth-tab.active {
+    background-color: var(--secondary-color);
+}
+
+.dark-mode .auth-links a {
+    color: var(--secondary-color-light);
+}
+
+.dark-mode .strength-meter {
+    background-color: #2c3e50;
+}
+
+.dark-mode .strength-text {
+    color: #bdc3c7;
+}

@@ -8319,3 +8319,312 @@ const config = {
     dbSchema: databaseSchema,
     init: initConfig
 };
+
+
+/**
+ * إضافة وظائف تسجيل المستخدمين وإنشاء الحسابات
+ * يمكن إضافة هذا الكود إلى ملف auth.js أو main.js
+ */
+
+// إعداد مستمعي الأحداث للنماذج
+function setupAuthForms() {
+    // أزرار التبديل بين تسجيل الدخول وإنشاء حساب
+    const loginTab = document.getElementById('login-tab');
+    const signupTab = document.getElementById('signup-tab');
+    
+    // النماذج
+    const loginForm = document.getElementById('login-form');
+    const signupForm = document.getElementById('signup-form');
+    const forgotPasswordForm = document.getElementById('forgot-password-form');
+    
+    // روابط التنقل
+    const forgotPasswordLink = document.getElementById('forgot-password-link');
+    const backToLoginLink = document.getElementById('back-to-login');
+    const backToLoginFromResetLink = document.getElementById('back-to-login-from-reset');
+    
+    // أزرار تبديل عرض كلمة المرور
+    const togglePasswordButtons = document.querySelectorAll('.toggle-password');
+    
+    // التبديل بين نماذج تسجيل الدخول وإنشاء الحساب
+    if (loginTab && signupTab) {
+        loginTab.addEventListener('click', function() {
+            loginTab.classList.add('active');
+            signupTab.classList.remove('active');
+            loginForm.style.display = 'block';
+            signupForm.style.display = 'none';
+            forgotPasswordForm.style.display = 'none';
+        });
+        
+        signupTab.addEventListener('click', function() {
+            signupTab.classList.add('active');
+            loginTab.classList.remove('active');
+            signupForm.style.display = 'block';
+            loginForm.style.display = 'none';
+            forgotPasswordForm.style.display = 'none';
+        });
+    }
+    
+    // رابط نسيت كلمة المرور
+    if (forgotPasswordLink) {
+        forgotPasswordLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            loginForm.style.display = 'none';
+            forgotPasswordForm.style.display = 'block';
+        });
+    }
+    
+    // رابط العودة إلى تسجيل الدخول
+    if (backToLoginLink) {
+        backToLoginLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            loginTab.classList.add('active');
+            signupTab.classList.remove('active');
+            loginForm.style.display = 'block';
+            signupForm.style.display = 'none';
+        });
+    }
+    
+    // رابط العودة إلى تسجيل الدخول من نموذج إعادة تعيين كلمة المرور
+    if (backToLoginFromResetLink) {
+        backToLoginFromResetLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            loginForm.style.display = 'block';
+            forgotPasswordForm.style.display = 'none';
+        });
+    }
+    
+    // تبديل عرض كلمة المرور
+    togglePasswordButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const input = this.closest('.password-input').querySelector('input');
+            const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+            input.setAttribute('type', type);
+            
+            // تبديل الأيقونة
+            const icon = this.querySelector('i');
+            if (icon) {
+                icon.className = type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+            }
+        });
+    });
+    
+    // معالجة قوة كلمة المرور
+    const signupPasswordInput = document.getElementById('signup-password');
+    if (signupPasswordInput) {
+        signupPasswordInput.addEventListener('input', function() {
+            updatePasswordStrength(this.value);
+        });
+    }
+    
+    // معالجة نموذج إنشاء حساب
+    if (signupForm) {
+        signupForm.addEventListener('submit', handleSignup);
+    }
+    
+    // معالجة نموذج إعادة تعيين كلمة المرور
+    if (forgotPasswordForm) {
+        forgotPasswordForm.addEventListener('submit', handlePasswordReset);
+    }
+}
+
+/**
+ * التعامل مع تقديم نموذج إنشاء حساب
+ * @param {Event} event حدث النموذج
+ */
+function handleSignup(event) {
+    event.preventDefault();
+    
+    // الحصول على بيانات النموذج
+    const fullName = document.getElementById('signup-fullname').value;
+    const username = document.getElementById('signup-username').value;
+    const email = document.getElementById('signup-email').value;
+    const phone = document.getElementById('signup-phone').value;
+    const password = document.getElementById('signup-password').value;
+    const confirmPassword = document.getElementById('signup-confirm-password').value;
+    
+    // التحقق من البيانات
+    if (!fullName || !username || !email || !phone || !password || !confirmPassword) {
+        showNotification('خطأ', 'يرجى ملء جميع الحقول المطلوبة', 'error');
+        return;
+    }
+    
+    // التحقق من تطابق كلمتي المرور
+    if (password !== confirmPassword) {
+        showNotification('خطأ', 'كلمتا المرور غير متطابقتين', 'error');
+        return;
+    }
+    
+    // التحقق من قوة كلمة المرور
+    const passwordStrength = checkPasswordStrength(password);
+    if (passwordStrength.score < 2) {
+        showNotification('خطأ', 'كلمة المرور ضعيفة. يرجى اختيار كلمة مرور أقوى.', 'error');
+        return;
+    }
+    
+    // عرض مؤشر التحميل
+    showLoading('جاري إنشاء الحساب...');
+    
+    // التحقق من عدم وجود اسم المستخدم بالفعل
+    dbRef.ref('users').orderByChild('username').equalTo(username).once('value')
+        .then(snapshot => {
+            if (snapshot.exists()) {
+                // اسم المستخدم موجود بالفعل
+                hideLoading();
+                showNotification('خطأ', 'اسم المستخدم موجود بالفعل، يرجى اختيار اسم مستخدم آخر', 'error');
+            } else {
+                // إنشاء المستخدم في Firebase Auth
+                return firebase.auth().createUserWithEmailAndPassword(email, password)
+                    .then(userCredential => {
+                        // الحصول على معرف المستخدم
+                        const userId = userCredential.user.uid;
+                        
+                        // إنشاء بيانات المستخدم
+                        const userData = {
+                            username: username,
+                            fullName: fullName,
+                            email: email,
+                            phone: phone,
+                            role: 'cashier', // دور افتراضي
+                            status: 'active',
+                            createdAt: new Date().toISOString(),
+                            permissions: getDefaultPermissions('cashier'),
+                            lastLogin: new Date().toISOString(),
+                            loginCount: 0
+                        };
+                        
+                        // حفظ بيانات المستخدم في قاعدة البيانات
+                        return dbRef.ref(`users/${userId}`).set(userData)
+                            .then(() => {
+                                hideLoading();
+                                
+                                // إظهار رسالة نجاح وإعادة توجيه المستخدم إلى نموذج تسجيل الدخول
+                                showNotification('تم بنجاح', 'تم إنشاء الحساب بنجاح. يمكنك الآن تسجيل الدخول.', 'success');
+                                
+                                // تسجيل الخروج بعد التسجيل للسماح بتسجيل الدخول يدويًا
+                                return firebase.auth().signOut()
+                                    .then(() => {
+                                        // العودة إلى نموذج تسجيل الدخول
+                                        document.getElementById('login-tab').click();
+                                        
+                                        // تعبئة بيانات تسجيل الدخول مسبقًا
+                                        document.getElementById('username').value = username;
+                                    });
+                            });
+                    });
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            
+            // معالجة أخطاء Firebase
+            let errorMessage = 'حدث خطأ أثناء إنشاء الحساب';
+            
+            switch (error.code) {
+                case 'auth/email-already-in-use':
+                    errorMessage = 'البريد الإلكتروني مستخدم بالفعل';
+                    break;
+                case 'auth/invalid-email':
+                    errorMessage = 'البريد الإلكتروني غير صالح';
+                    break;
+                case 'auth/weak-password':
+                    errorMessage = 'كلمة المرور ضعيفة جدًا';
+                    break;
+                default:
+                    errorMessage = error.message;
+            }
+            
+            showNotification('خطأ', errorMessage, 'error');
+            console.error('خطأ في إنشاء الحساب:', error);
+        });
+}
+
+/**
+ * التعامل مع طلب إعادة تعيين كلمة المرور
+ * @param {Event} event حدث النموذج
+ */
+function handlePasswordReset(event) {
+    event.preventDefault();
+    
+    // الحصول على البريد الإلكتروني
+    const email = document.getElementById('reset-email').value;
+    
+    if (!email) {
+        showNotification('خطأ', 'يرجى إدخال البريد الإلكتروني', 'error');
+        return;
+    }
+    
+    // عرض مؤشر التحميل
+    showLoading('جاري إرسال رابط إعادة تعيين كلمة المرور...');
+    
+    // إرسال طلب إعادة تعيين كلمة المرور
+    firebase.auth().sendPasswordResetEmail(email)
+        .then(() => {
+            hideLoading();
+            showNotification('تم بنجاح', 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني', 'success');
+            
+            // العودة إلى نموذج تسجيل الدخول
+            document.getElementById('back-to-login-from-reset').click();
+        })
+        .catch(error => {
+            hideLoading();
+            
+            // معالجة أخطاء Firebase
+            let errorMessage = 'حدث خطأ أثناء إرسال رابط إعادة تعيين كلمة المرور';
+            
+            switch (error.code) {
+                case 'auth/user-not-found':
+                    errorMessage = 'لم يتم العثور على حساب بهذا البريد الإلكتروني';
+                    break;
+                case 'auth/invalid-email':
+                    errorMessage = 'البريد الإلكتروني غير صالح';
+                    break;
+                default:
+                    errorMessage = error.message;
+            }
+            
+            showNotification('خطأ', errorMessage, 'error');
+            console.error('خطأ في إعادة تعيين كلمة المرور:', error);
+        });
+}
+
+/**
+ * تحديث مؤشر قوة كلمة المرور
+ * @param {string} password كلمة المرور
+ */
+function updatePasswordStrength(password) {
+    const strengthMeter = document.getElementById('signup-password-strength-meter');
+    const strengthText = document.getElementById('signup-password-strength-text');
+    
+    if (!strengthMeter || !strengthText) return;
+    
+    const { score, message } = checkPasswordStrength(password);
+    
+    // تحديث النص
+    strengthText.textContent = `قوة كلمة المرور: ${message}`;
+    
+    // تحديث شريط القوة
+    strengthMeter.style.width = `${(score / 5) * 100}%`;
+    
+    // تحديث لون الشريط
+    if (score < 2) {
+        strengthMeter.style.backgroundColor = '#e74c3c'; // أحمر - ضعيفة
+    } else if (score < 3) {
+        strengthMeter.style.backgroundColor = '#f39c12'; // برتقالي - متوسطة
+    } else if (score < 5) {
+        strengthMeter.style.backgroundColor = '#2ecc71'; // أخضر - قوية
+    } else {
+        strengthMeter.style.backgroundColor = '#27ae60'; // أخضر غامق - قوية جدًا
+    }
+}
+
+// إضافة استدعاء دالة إعداد النماذج إلى حدث تحميل المستند
+document.addEventListener('DOMContentLoaded', function() {
+    // إعداد نماذج المصادقة
+    setupAuthForms();
+    
+    // التحقق من وجود رمز إعادة تعيين كلمة المرور في URL
+    if (window.location.href.indexOf('mode=resetPassword') !== -1) {
+        // تنفيذ إعادة تعيين كلمة المرور
+        // (ملاحظة: هذا يتطلب إعدادًا إضافيًا خارج نطاق هذا الكود)
+    }
+});
