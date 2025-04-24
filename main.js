@@ -614,14 +614,15 @@ function loadBranchesForLogin() {
     const branchSelection = document.getElementById('branch-selection');
     if (!branchSelection) return;
     
-    // تفريغ القائمة
-    branchSelection.innerHTML = '';
+    // تفريغ القائمة وإضافة خيار التحميل
+    branchSelection.innerHTML = '<option value="" disabled selected>جاري تحميل الفروع...</option>';
     
-    // إضافة عنصر تحميل
-    const loadingOption = document.createElement('option');
-    loadingOption.value = '';
-    loadingOption.textContent = 'جاري تحميل الفروع...';
-    branchSelection.appendChild(loadingOption);
+    // التأكد من تهيئة قاعدة البيانات
+    if (!dbRef) {
+        console.error('قاعدة البيانات غير متصلة');
+        branchSelection.innerHTML = '<option value="">الفرع الرئيسي</option>';
+        return;
+    }
     
     // تحميل الفروع من قاعدة البيانات
     dbRef.ref('branches').once('value')
@@ -630,31 +631,93 @@ function loadBranchesForLogin() {
             branchSelection.innerHTML = '';
             
             if (snapshot.exists()) {
+                let branches = [];
                 snapshot.forEach(childSnapshot => {
                     const branch = childSnapshot.val();
+                    branch.id = childSnapshot.key;
+                    branches.push(branch);
+                });
+                
+                // إذا لم يتم العثور على أي فروع
+                if (branches.length === 0) {
+                    branchSelection.innerHTML = '<option value="">الفرع الرئيسي</option>';
+                    return;
+                }
+                
+                // إضافة الفروع إلى القائمة
+                branches.forEach(branch => {
                     const option = document.createElement('option');
-                    option.value = childSnapshot.key;
-                    option.textContent = branch.name;
+                    option.value = branch.id;
+                    option.textContent = branch.name || 'فرع بدون اسم';
                     branchSelection.appendChild(option);
                 });
             } else {
-                // إضافة عنصر افتراضي
-                const defaultOption = document.createElement('option');
-                defaultOption.value = '';
-                defaultOption.textContent = 'الفرع الرئيسي';
-                branchSelection.appendChild(defaultOption);
+                // إضافة خيار افتراضي
+                branchSelection.innerHTML = '<option value="">الفرع الرئيسي</option>';
             }
         })
         .catch(error => {
             console.error('خطأ في تحميل الفروع:', error);
-            
-            // تفريغ القائمة وإضافة عنصر افتراضي
-            branchSelection.innerHTML = '';
-            const errorOption = document.createElement('option');
-            errorOption.value = '';
-            errorOption.textContent = 'خطأ في تحميل الفروع';
-            branchSelection.appendChild(errorOption);
+            branchSelection.innerHTML = '<option value="">الفرع الرئيسي</option>';
         });
+}
+
+firebase.auth().onAuthStateChanged(function() {
+  // تحميل قائمة الفروع بعد تهيئة Firebase
+  loadBranchesForLogin();
+});
+
+// إضافة فرع افتراضي إذا لم توجد فروع
+function createDefaultBranch() {
+    const defaultBranch = {
+        name: 'الفرع الرئيسي',
+        code: 'MAIN',
+        type: 'main',
+        address: 'العنوان الرئيسي',
+        createdAt: new Date().toISOString()
+    };
+    
+    return dbRef.ref('branches').push(defaultBranch);
+}
+
+
+// فحص الاتصال بـ Firebase
+function checkFirebaseConnection() {
+    const connectedRef = firebase.database().ref(".info/connected");
+    connectedRef.on("value", (snap) => {
+        if (snap.val() === true) {
+            console.log("متصل بـ Firebase");
+            loadBranchesForLogin();
+        } else {
+            console.log("غير متصل بـ Firebase");
+            const branchSelection = document.getElementById('branch-selection');
+            if (branchSelection) {
+                branchSelection.innerHTML = '<option value="">الفرع الرئيسي (غير متصل)</option>';
+            }
+        }
+    });
+}
+
+
+console.log('جاري تحميل الفروع...');
+dbRef.ref('branches').once('value')
+    .then(snapshot => {
+        console.log('تم تحميل البيانات:', snapshot.val());
+        // بقية الكود
+    });
+    
+    
+    function simpleBranchLoading() {
+    const branchSelection = document.getElementById('branch-selection');
+    if (branchSelection) {
+        branchSelection.innerHTML = '';
+        
+        // إضافة خيار افتراضي للاختبار
+        const option = document.createElement('option');
+        option.value = 'default';
+        option.textContent = 'الفرع الرئيسي (اختبار)';
+        branchSelection.appendChild(option);
+    }
 }
 
 /**
