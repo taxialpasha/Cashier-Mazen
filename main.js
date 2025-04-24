@@ -720,6 +720,100 @@ dbRef.ref('branches').once('value')
     }
 }
 
+
+/**
+ * تجاوز عملية تسجيل الدخول والدخول مباشرة إلى الواجهة الرئيسية
+ */
+function bypassLogin() {
+    // إخفاء شاشة تسجيل الدخول
+    const loginContainer = document.getElementById('login-container');
+    if (loginContainer) {
+        loginContainer.style.display = 'none';
+    }
+    
+    // إنشاء مستخدم افتراضي
+    currentUser = {
+        id: 'default-user-id',
+        username: 'admin',
+        fullName: 'المستخدم الافتراضي',
+        email: 'admin@example.com',
+        role: 'admin', // منح كامل الصلاحيات
+        status: 'active',
+        permissions: {
+            pos: { access: true, discount: true, return: true },
+            inventory: { access: true, add: true, edit: true, delete: true },
+            reports: { access: true, sales: true, export: true },
+            customers: { access: true, add: true, edit: true, delete: true },
+            admin: { access: true, users: true, branches: true, settings: true, backup: true }
+        }
+    };
+    
+    // إنشاء فرع افتراضي
+    currentBranch = {
+        id: 'default-branch-id',
+        name: 'الفرع الرئيسي',
+        code: 'MAIN',
+        type: 'main',
+        address: 'العنوان الرئيسي'
+    };
+    
+    // إذا لم تكن الإعدادات موجودة، قم بإنشائها
+    if (!appSettings) {
+        appSettings = createDefaultSettings();
+    }
+    
+    // إظهار واجهة التطبيق
+    const appContainer = document.getElementById('app-container');
+    if (appContainer) {
+        appContainer.style.display = 'flex';
+    }
+    
+    // تهيئة واجهة المستخدم
+    initializeUI();
+    
+    // تحميل البيانات الأساسية
+    try {
+        loadCategories();
+        loadProducts();
+        loadCustomers();
+    } catch (error) {
+        console.error('خطأ في تحميل البيانات:', error);
+    }
+    
+    // إظهار الصفحة الرئيسية (نقطة البيع)
+    changePage('pos');
+    
+    console.log('تم تجاوز تسجيل الدخول وتحميل التطبيق.');
+}
+
+/**
+ * تهيئة واجهة المستخدم
+ */
+function initializeUI() {
+    // تعيين اسم المستخدم وصلاحيته
+    document.getElementById('current-user-name').textContent = `مرحباً، ${currentUser.fullName}`;
+    document.getElementById('current-user-role').textContent = getCurrentRoleName(currentUser.role);
+    
+    // تعيين اسم الفرع الحالي
+    document.getElementById('current-branch-name').textContent = currentBranch.name;
+    
+    // تطبيق إعدادات المظهر
+    applySettings();
+}
+
+// استدعاء الدالة عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    // تهيئة Firebase
+    try {
+        dbRef = firebase.database();
+    } catch (error) {
+        console.error('خطأ في تهيئة Firebase:', error);
+    }
+    
+    // تجاوز تسجيل الدخول
+    bypassLogin();
+});
+
 /**
  * تبديل وضع الظلام
  * @param {boolean} enable تفعيل/تعطيل وضع الظلام
