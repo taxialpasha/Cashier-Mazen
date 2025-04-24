@@ -18,7 +18,116 @@
 </head>
 <body>
     <!-- Login Screen -->
-    <div id="login-container" class="login
+    
+<div id="login-container" class="login-container">
+    <div class="login-form-container">
+        <div class="logo-container">
+            <i class="fas fa-shopping-cart"></i>
+            <h1>نظام نقطة البيع المتكامل</h1>
+        </div>
+        
+        <!-- أزرار التبديل بين تسجيل الدخول والتسجيل -->
+        <div class="auth-tabs">
+            <button class="auth-tab active" id="login-tab">تسجيل الدخول</button>
+            <button class="auth-tab" id="signup-tab">إنشاء حساب جديد</button>
+        </div>
+        
+        <!-- نموذج تسجيل الدخول -->
+        <form id="login-form">
+            <div class="form-group">
+                <label for="username">اسم المستخدم</label>
+                <input type="text" id="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">كلمة المرور</label>
+                <div class="password-input">
+                    <input type="password" id="password" required>
+                    <button type="button" id="toggle-password" class="toggle-password">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="form-group branch-group">
+                <label for="branch-selection">الفرع</label>
+                <select id="branch-selection" required>
+                    <!-- سيتم تحميل الفروع ديناميكياً -->
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">تسجيل الدخول</button>
+            <div class="auth-links">
+                <a href="#" id="forgot-password-link">نسيت كلمة المرور؟</a>
+            </div>
+        </form>
+        
+        <!-- نموذج إنشاء حساب جديد -->
+        <form id="signup-form" style="display: none;">
+            <div class="form-group">
+                <label for="signup-fullname">الاسم الكامل</label>
+                <input type="text" id="signup-fullname" required>
+            </div>
+            <div class="form-group">
+                <label for="signup-username">اسم المستخدم</label>
+                <input type="text" id="signup-username" required>
+            </div>
+            <div class="form-group">
+                <label for="signup-email">البريد الإلكتروني</label>
+                <input type="email" id="signup-email" required>
+            </div>
+            <div class="form-group">
+                <label for="signup-phone">رقم الهاتف</label>
+                <input type="tel" id="signup-phone" required>
+            </div>
+            <div class="form-group">
+                <label for="signup-password">كلمة المرور</label>
+                <div class="password-input">
+                    <input type="password" id="signup-password" required>
+                    <button type="button" id="toggle-signup-password" class="toggle-password">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="signup-confirm-password">تأكيد كلمة المرور</label>
+                <div class="password-input">
+                    <input type="password" id="signup-confirm-password" required>
+                    <button type="button" id="toggle-confirm-password" class="toggle-password">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="password-strength">
+                <div class="strength-meter">
+                    <div class="meter-bar" id="signup-password-strength-meter"></div>
+                </div>
+                <div class="strength-text" id="signup-password-strength-text">قوة كلمة المرور</div>
+            </div>
+            <button type="submit" class="btn btn-primary">إنشاء حساب</button>
+            <div class="auth-links">
+                <a href="#" id="back-to-login">العودة لتسجيل الدخول</a>
+            </div>
+        </form>
+        
+        <!-- نموذج استعادة كلمة المرور -->
+        <form id="forgot-password-form" style="display: none;">
+            <div class="form-group">
+                <label for="reset-email">البريد الإلكتروني</label>
+                <input type="email" id="reset-email" required>
+            </div>
+            <button type="submit" class="btn btn-primary">إرسال رابط الاستعادة</button>
+            <div class="auth-links">
+                <a href="#" id="back-to-login-from-reset">العودة لتسجيل الدخول</a>
+            </div>
+        </form>
+        
+        <div class="version-info">
+            <p>إصدار 2.0.0</p>
+            <p>&copy; 2025 جميع الحقوق محفوظة</p>
+        </div>
+    </div>
+</div>
+        </div>
+    </div>
+
     <!-- Main App (Initially Hidden) -->
     <div id="app-container" class="app-container" style="display: none;">
         <!-- Header -->
