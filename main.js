@@ -45,10 +45,6 @@ function checkAuthState() {
  * الحصول على بيانات المستخدم
  * @param {string} userId معرف المستخدم
  */
-/**
- * الحصول على بيانات المستخدم
- * @param {string} userId معرف المستخدم
- */
 function getUserData(userId) {
     dbRef.ref(`users/${userId}`).once('value')
         .then(snapshot => {
@@ -56,8 +52,33 @@ function getUserData(userId) {
                 currentUser = snapshot.val();
                 currentUser.id = userId;
                 
-                // إنشاء فرع افتراضي مباشرة دون البحث عن الفرع الأخير
-                createDefaultBranch();
+                // التحقق من الفرع المحدد
+                if (currentUser.lastBranch) {
+                    getBranchData(currentUser.lastBranch);
+                } else {
+                    // استخدام الفرع الرئيسي
+                    dbRef.ref('branches').orderByChild('type').equalTo('main').once('value')
+                        .then(branchSnapshot => {
+                            let mainBranch = null;
+                            branchSnapshot.forEach(childSnapshot => {
+                                mainBranch = childSnapshot.val();
+                                mainBranch.id = childSnapshot.key;
+                                return true; // للخروج من الحلقة بعد العثور على أول فرع رئيسي
+                            });
+                            
+                            if (mainBranch) {
+                                getBranchData(mainBranch.id);
+                            } else {
+                                // إنشاء فرع رئيسي افتراضي إذا لم يوجد
+                                createDefaultBranch();
+                            }
+                        })
+                        .catch(error => {
+                            console.error('خطأ في الحصول على بيانات الفرع الرئيسي:', error);
+                            hideLoading();
+                            showNotification('خطأ', 'حدث خطأ أثناء تحميل بيانات الفرع. يرجى المحاولة مرة أخرى.', 'error');
+                        });
+                }
             } else {
                 // المستخدم موجود في Firebase Auth ولكن ليس لديه بيانات في قاعدة البيانات
                 signOut();
@@ -593,15 +614,14 @@ function loadBranchesForLogin() {
     const branchSelection = document.getElementById('branch-selection');
     if (!branchSelection) return;
     
-    // تفريغ القائمة وإضافة خيار التحميل
-    branchSelection.innerHTML = '<option value="" disabled selected>جاري تحميل الفروع...</option>';
+    // تفريغ القائمة
+    branchSelection.innerHTML = '';
     
-    // التأكد من تهيئة قاعدة البيانات
-    if (!dbRef) {
-        console.error('قاعدة البيانات غير متصلة');
-        branchSelection.innerHTML = '<option value="">الفرع الرئيسي</option>';
-        return;
-    }
+    // إضافة عنصر تحميل
+    const loadingOption = document.createElement('option');
+    loadingOption.value = '';
+    loadingOption.textContent = 'جاري تحميل الفروع...';
+    branchSelection.appendChild(loadingOption);
     
     // تحميل الفروع من قاعدة البيانات
     dbRef.ref('branches').once('value')
@@ -610,221 +630,32 @@ function loadBranchesForLogin() {
             branchSelection.innerHTML = '';
             
             if (snapshot.exists()) {
-                let branches = [];
                 snapshot.forEach(childSnapshot => {
                     const branch = childSnapshot.val();
-                    branch.id = childSnapshot.key;
-                    branches.push(branch);
-                });
-                
-                // إذا لم يتم العثور على أي فروع
-                if (branches.length === 0) {
-                    branchSelection.innerHTML = '<option value="">الفرع الرئيسي</option>';
-                    return;
-                }
-                
-                // إضافة الفروع إلى القائمة
-                branches.forEach(branch => {
                     const option = document.createElement('option');
-                    option.value = branch.id;
-                    option.textContent = branch.name || 'فرع بدون اسم';
+                    option.value = childSnapshot.key;
+                    option.textContent = branch.name;
                     branchSelection.appendChild(option);
                 });
             } else {
-                // إضافة خيار افتراضي
-                branchSelection.innerHTML = '<option value="">الفرع الرئيسي</option>';
+                // إضافة عنصر افتراضي
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = 'الفرع الرئيسي';
+                branchSelection.appendChild(defaultOption);
             }
         })
         .catch(error => {
             console.error('خطأ في تحميل الفروع:', error);
-            branchSelection.innerHTML = '<option value="">الفرع الرئيسي</option>';
+            
+            // تفريغ القائمة وإضافة عنصر افتراضي
+            branchSelection.innerHTML = '';
+            const errorOption = document.createElement('option');
+            errorOption.value = '';
+            errorOption.textContent = 'خطأ في تحميل الفروع';
+            branchSelection.appendChild(errorOption);
         });
 }
-
-firebase.auth().onAuthStateChanged(function() {
-  // تحميل قائمة الفروع بعد تهيئة Firebase
-  loadBranchesForLogin();
-});
-
-/**
- * إنشاء فرع رئيسي افتراضي
- */
-function createDefaultBranch() {
-    const defaultBranch = {
-        name: 'الفرع الرئيسي',
-        code: 'MAIN',
-        address: 'الموقع الرئيسي',
-        phone: '',
-        manager: currentUser ? currentUser.id : 'default-user',
-        type: 'main',
-        createdAt: new Date().toISOString(),
-        createdBy: currentUser ? currentUser.id : 'default-user'
-    };
-    
-    const newBranchRef = dbRef.ref('branches').push();
-    newBranchRef.set(defaultBranch)
-        .then(() => {
-            defaultBranch.id = newBranchRef.key;
-            currentBranch = defaultBranch;
-            
-            // حفظ معرف الفرع في التخزين المؤقت للمتصفح
-            sessionStorage.setItem('selectedBranch', newBranchRef.key);
-            
-            // حفظ الفرع الأخير للمستخدم إذا كان متاحاً
-            if (currentUser) {
-                dbRef.ref(`users/${currentUser.id}`).update({
-                    lastBranch: newBranchRef.key,
-                    lastLogin: new Date().toISOString()
-                });
-            }
-            
-            // تحميل إعدادات التطبيق
-            loadAppSettings();
-        })
-        .catch(error => {
-            console.error('خطأ في إنشاء الفرع الافتراضي:', error);
-            hideLoading();
-            
-            // تحميل إعدادات التطبيق حتى في حالة الخطأ لمواصلة التطبيق
-            loadAppSettings();
-            
-            showNotification('تنبيه', 'حدث خطأ أثناء إنشاء الفرع الافتراضي. سيتم المتابعة بالإعدادات الافتراضية.', 'warning');
-        });
-}
-
-
-// فحص الاتصال بـ Firebase
-function checkFirebaseConnection() {
-    const connectedRef = firebase.database().ref(".info/connected");
-    connectedRef.on("value", (snap) => {
-        if (snap.val() === true) {
-            console.log("متصل بـ Firebase");
-            loadBranchesForLogin();
-        } else {
-            console.log("غير متصل بـ Firebase");
-            const branchSelection = document.getElementById('branch-selection');
-            if (branchSelection) {
-                branchSelection.innerHTML = '<option value="">الفرع الرئيسي (غير متصل)</option>';
-            }
-        }
-    });
-}
-
-
-console.log('جاري تحميل الفروع...');
-dbRef.ref('branches').once('value')
-    .then(snapshot => {
-        console.log('تم تحميل البيانات:', snapshot.val());
-        // بقية الكود
-    });
-    
-    
-    function simpleBranchLoading() {
-    const branchSelection = document.getElementById('branch-selection');
-    if (branchSelection) {
-        branchSelection.innerHTML = '';
-        
-        // إضافة خيار افتراضي للاختبار
-        const option = document.createElement('option');
-        option.value = 'default';
-        option.textContent = 'الفرع الرئيسي (اختبار)';
-        branchSelection.appendChild(option);
-    }
-}
-
-
-/**
- * تجاوز عملية تسجيل الدخول والدخول مباشرة إلى الواجهة الرئيسية
- */
-function bypassLogin() {
-    // إخفاء شاشة تسجيل الدخول
-    const loginContainer = document.getElementById('login-container');
-    if (loginContainer) {
-        loginContainer.style.display = 'none';
-    }
-    
-    // إنشاء مستخدم افتراضي
-    currentUser = {
-        id: 'default-user-id',
-        username: 'admin',
-        fullName: 'المستخدم الافتراضي',
-        email: 'admin@example.com',
-        role: 'admin', // منح كامل الصلاحيات
-        status: 'active',
-        permissions: {
-            pos: { access: true, discount: true, return: true },
-            inventory: { access: true, add: true, edit: true, delete: true },
-            reports: { access: true, sales: true, export: true },
-            customers: { access: true, add: true, edit: true, delete: true },
-            admin: { access: true, users: true, branches: true, settings: true, backup: true }
-        }
-    };
-    
-    // إنشاء فرع افتراضي
-    currentBranch = {
-        id: 'default-branch-id',
-        name: 'الفرع الرئيسي',
-        code: 'MAIN',
-        type: 'main',
-        address: 'العنوان الرئيسي'
-    };
-    
-    // إذا لم تكن الإعدادات موجودة، قم بإنشائها
-    if (!appSettings) {
-        appSettings = createDefaultSettings();
-    }
-    
-    // إظهار واجهة التطبيق
-    const appContainer = document.getElementById('app-container');
-    if (appContainer) {
-        appContainer.style.display = 'flex';
-    }
-    
-    // تهيئة واجهة المستخدم
-    initializeUI();
-    
-    // تحميل البيانات الأساسية
-    try {
-        loadCategories();
-        loadProducts();
-        loadCustomers();
-    } catch (error) {
-        console.error('خطأ في تحميل البيانات:', error);
-    }
-    
-    // إظهار الصفحة الرئيسية (نقطة البيع)
-    changePage('pos');
-    
-    console.log('تم تجاوز تسجيل الدخول وتحميل التطبيق.');
-}
-
-/**
- * تهيئة واجهة المستخدم
- */
-function initializeUI() {
-    // تعيين اسم المستخدم وصلاحيته
-    document.getElementById('current-user-name').textContent = `مرحباً، ${currentUser.fullName}`;
-    document.getElementById('current-user-role').textContent = getCurrentRoleName(currentUser.role);
-    
-    // تعيين اسم الفرع الحالي
-    document.getElementById('current-branch-name').textContent = currentBranch.name;
-    
-    // تطبيق إعدادات المظهر
-    applySettings();
-}
-
-// استدعاء الدالة عند تحميل الصفحة
-document.addEventListener('DOMContentLoaded', function() {
-    // تهيئة Firebase
-    try {
-        dbRef = firebase.database();
-    } catch (error) {
-        console.error('خطأ في تهيئة Firebase:', error);
-    }
-    
-    // تجاوز تسجيل الدخول
-    bypassLogin();
-});
 
 /**
  * تبديل وضع الظلام
@@ -7080,72 +6911,48 @@ function setupLoginFormListeners() {
 }
 
 /**
- * معالجة تسجيل الدخول
+ * معالجة تقديم نموذج تسجيل الدخول
  * @param {Event} event حدث النموذج
  */
 function handleLoginSubmit(event) {
     event.preventDefault();
     
+    // الحصول على بيانات النموذج
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
+    const branchId = document.getElementById('branch-selection').value;
     
-    // إزالة التحقق من الفرع
-    // const branchId = document.getElementById('branch-selection').value;
-    
+    // التحقق من البيانات
     if (!username || !password) {
         showNotification('خطأ', 'يرجى إدخال اسم المستخدم وكلمة المرور', 'error');
         return;
     }
     
-    // نضيف فرع افتراضي
-    const defaultBranchId = 'default-branch';
-    sessionStorage.setItem('selectedBranch', defaultBranchId);
+    // حفظ الفرع المحدد في التخزين المؤقت
+    if (branchId) {
+        sessionStorage.setItem('selectedBranch', branchId);
+    }
     
     // عرض مؤشر التحميل
     showLoading('جاري تسجيل الدخول...');
     
-    // البحث عن المستخدم في قاعدة البيانات
-    dbRef.ref('users').orderByChild('username').equalTo(username).once('value')
-        .then(snapshot => {
-            if (snapshot.exists()) {
-                let userId = null;
-                let userData = null;
-                
-                snapshot.forEach(childSnapshot => {
-                    userId = childSnapshot.key;
-                    userData = childSnapshot.val();
-                });
-                
-                // تسجيل الدخول باستخدام Firebase Auth
-                return firebase.auth().signInWithEmailAndPassword(userData.email, password)
-                    .then(() => {
-                        // تحديث بيانات الفرع المحدد
-                        dbRef.ref(`users/${userId}`).update({
-                            lastBranch: defaultBranchId,
-                            lastLogin: new Date().toISOString()
-                        });
-                    })
-                    .catch(error => {
-                        console.error('خطأ في تسجيل الدخول:', error);
-                        hideLoading();
-                        
-                        if (error.code === 'auth/wrong-password') {
-                            showNotification('خطأ', 'كلمة المرور غير صحيحة', 'error');
-                        } else if (error.code === 'auth/user-not-found') {
-                            showNotification('خطأ', 'البريد الإلكتروني غير مسجل', 'error');
-                        } else {
-                            showNotification('خطأ', 'فشل تسجيل الدخول. يرجى المحاولة مرة أخرى.', 'error');
-                        }
-                    });
-            } else {
-                hideLoading();
-                showNotification('خطأ', 'اسم المستخدم غير موجود', 'error');
-            }
-        })
+    // تسجيل الدخول
+    loginWithUsername(username, password)
         .catch(error => {
-            console.error('خطأ في البحث عن المستخدم:', error);
+            console.error('خطأ في تسجيل الدخول:', error);
             hideLoading();
-            showNotification('خطأ', 'حدث خطأ أثناء تسجيل الدخول. يرجى المحاولة مرة أخرى.', 'error');
+            
+            // زيادة عداد المحاولات الفاشلة
+            authFailCount++;
+            
+            // التحقق من عدد المحاولات
+            if (authFailCount >= (appSettings?.security?.loginAttempts || 5)) {
+                // قفل تسجيل الدخول
+                lockLogin();
+            } else {
+                // عرض رسالة الخطأ
+                showLoginError(error);
+            }
         });
 }
 
