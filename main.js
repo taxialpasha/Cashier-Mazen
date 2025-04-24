@@ -45,6 +45,10 @@ function checkAuthState() {
  * الحصول على بيانات المستخدم
  * @param {string} userId معرف المستخدم
  */
+/**
+ * الحصول على بيانات المستخدم
+ * @param {string} userId معرف المستخدم
+ */
 function getUserData(userId) {
     dbRef.ref(`users/${userId}`).once('value')
         .then(snapshot => {
@@ -52,33 +56,8 @@ function getUserData(userId) {
                 currentUser = snapshot.val();
                 currentUser.id = userId;
                 
-                // التحقق من الفرع المحدد
-                if (currentUser.lastBranch) {
-                    getBranchData(currentUser.lastBranch);
-                } else {
-                    // استخدام الفرع الرئيسي
-                    dbRef.ref('branches').orderByChild('type').equalTo('main').once('value')
-                        .then(branchSnapshot => {
-                            let mainBranch = null;
-                            branchSnapshot.forEach(childSnapshot => {
-                                mainBranch = childSnapshot.val();
-                                mainBranch.id = childSnapshot.key;
-                                return true; // للخروج من الحلقة بعد العثور على أول فرع رئيسي
-                            });
-                            
-                            if (mainBranch) {
-                                getBranchData(mainBranch.id);
-                            } else {
-                                // إنشاء فرع رئيسي افتراضي إذا لم يوجد
-                                createDefaultBranch();
-                            }
-                        })
-                        .catch(error => {
-                            console.error('خطأ في الحصول على بيانات الفرع الرئيسي:', error);
-                            hideLoading();
-                            showNotification('خطأ', 'حدث خطأ أثناء تحميل بيانات الفرع. يرجى المحاولة مرة أخرى.', 'error');
-                        });
-                }
+                // إنشاء فرع افتراضي مباشرة دون البحث عن الفرع الأخير
+                createDefaultBranch();
             } else {
                 // المستخدم موجود في Firebase Auth ولكن ليس لديه بيانات في قاعدة البيانات
                 signOut();
@@ -667,17 +646,50 @@ firebase.auth().onAuthStateChanged(function() {
   loadBranchesForLogin();
 });
 
-// إضافة فرع افتراضي إذا لم توجد فروع
+/**
+ * إنشاء فرع رئيسي افتراضي
+ */
 function createDefaultBranch() {
     const defaultBranch = {
         name: 'الفرع الرئيسي',
         code: 'MAIN',
+        address: 'الموقع الرئيسي',
+        phone: '',
+        manager: currentUser ? currentUser.id : 'default-user',
         type: 'main',
-        address: 'العنوان الرئيسي',
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        createdBy: currentUser ? currentUser.id : 'default-user'
     };
     
-    return dbRef.ref('branches').push(defaultBranch);
+    const newBranchRef = dbRef.ref('branches').push();
+    newBranchRef.set(defaultBranch)
+        .then(() => {
+            defaultBranch.id = newBranchRef.key;
+            currentBranch = defaultBranch;
+            
+            // حفظ معرف الفرع في التخزين المؤقت للمتصفح
+            sessionStorage.setItem('selectedBranch', newBranchRef.key);
+            
+            // حفظ الفرع الأخير للمستخدم إذا كان متاحاً
+            if (currentUser) {
+                dbRef.ref(`users/${currentUser.id}`).update({
+                    lastBranch: newBranchRef.key,
+                    lastLogin: new Date().toISOString()
+                });
+            }
+            
+            // تحميل إعدادات التطبيق
+            loadAppSettings();
+        })
+        .catch(error => {
+            console.error('خطأ في إنشاء الفرع الافتراضي:', error);
+            hideLoading();
+            
+            // تحميل إعدادات التطبيق حتى في حالة الخطأ لمواصلة التطبيق
+            loadAppSettings();
+            
+            showNotification('تنبيه', 'حدث خطأ أثناء إنشاء الفرع الافتراضي. سيتم المتابعة بالإعدادات الافتراضية.', 'warning');
+        });
 }
 
 
@@ -7068,48 +7080,72 @@ function setupLoginFormListeners() {
 }
 
 /**
- * معالجة تقديم نموذج تسجيل الدخول
+ * معالجة تسجيل الدخول
  * @param {Event} event حدث النموذج
  */
 function handleLoginSubmit(event) {
     event.preventDefault();
     
-    // الحصول على بيانات النموذج
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
-    const branchId = document.getElementById('branch-selection').value;
     
-    // التحقق من البيانات
+    // إزالة التحقق من الفرع
+    // const branchId = document.getElementById('branch-selection').value;
+    
     if (!username || !password) {
         showNotification('خطأ', 'يرجى إدخال اسم المستخدم وكلمة المرور', 'error');
         return;
     }
     
-    // حفظ الفرع المحدد في التخزين المؤقت
-    if (branchId) {
-        sessionStorage.setItem('selectedBranch', branchId);
-    }
+    // نضيف فرع افتراضي
+    const defaultBranchId = 'default-branch';
+    sessionStorage.setItem('selectedBranch', defaultBranchId);
     
     // عرض مؤشر التحميل
     showLoading('جاري تسجيل الدخول...');
     
-    // تسجيل الدخول
-    loginWithUsername(username, password)
-        .catch(error => {
-            console.error('خطأ في تسجيل الدخول:', error);
-            hideLoading();
-            
-            // زيادة عداد المحاولات الفاشلة
-            authFailCount++;
-            
-            // التحقق من عدد المحاولات
-            if (authFailCount >= (appSettings?.security?.loginAttempts || 5)) {
-                // قفل تسجيل الدخول
-                lockLogin();
+    // البحث عن المستخدم في قاعدة البيانات
+    dbRef.ref('users').orderByChild('username').equalTo(username).once('value')
+        .then(snapshot => {
+            if (snapshot.exists()) {
+                let userId = null;
+                let userData = null;
+                
+                snapshot.forEach(childSnapshot => {
+                    userId = childSnapshot.key;
+                    userData = childSnapshot.val();
+                });
+                
+                // تسجيل الدخول باستخدام Firebase Auth
+                return firebase.auth().signInWithEmailAndPassword(userData.email, password)
+                    .then(() => {
+                        // تحديث بيانات الفرع المحدد
+                        dbRef.ref(`users/${userId}`).update({
+                            lastBranch: defaultBranchId,
+                            lastLogin: new Date().toISOString()
+                        });
+                    })
+                    .catch(error => {
+                        console.error('خطأ في تسجيل الدخول:', error);
+                        hideLoading();
+                        
+                        if (error.code === 'auth/wrong-password') {
+                            showNotification('خطأ', 'كلمة المرور غير صحيحة', 'error');
+                        } else if (error.code === 'auth/user-not-found') {
+                            showNotification('خطأ', 'البريد الإلكتروني غير مسجل', 'error');
+                        } else {
+                            showNotification('خطأ', 'فشل تسجيل الدخول. يرجى المحاولة مرة أخرى.', 'error');
+                        }
+                    });
             } else {
-                // عرض رسالة الخطأ
-                showLoginError(error);
+                hideLoading();
+                showNotification('خطأ', 'اسم المستخدم غير موجود', 'error');
             }
+        })
+        .catch(error => {
+            console.error('خطأ في البحث عن المستخدم:', error);
+            hideLoading();
+            showNotification('خطأ', 'حدث خطأ أثناء تسجيل الدخول. يرجى المحاولة مرة أخرى.', 'error');
         });
 }
 
